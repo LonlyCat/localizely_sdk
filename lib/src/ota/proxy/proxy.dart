@@ -25,6 +25,8 @@ class MessageLookupProxy implements MessageLookup {
   String? lookupMessage(String? messageText, String? locale, String? name,
       List<Object>? args, String? meaning,
       {MessageIfAbsent? ifAbsent}) {
+    // debug print for message lookup
+    print('lookupMessage: $messageText, $locale, $name, $args, $meaning');
     try {
       var currentLocale = locale ?? Intl.getCurrentLocale();
       var labels = SdkData.getData(currentLocale);
