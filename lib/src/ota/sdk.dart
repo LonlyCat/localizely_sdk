@@ -21,11 +21,11 @@ class Localizely {
   /// Initializes Localizely SDK.
   ///
   /// Values for [sdkToken] and [distributionId] are generated on the Localizely platform.
-  static void init(String sdkToken, String distributionId) {
+  static void init(String sdkToken, String distributionId, {bool showMessageKey = false}) {
     _sdkToken = sdkToken;
     _distributionId = distributionId;
 
-    messageLookup = MessageLookupProxy.from(messageLookup);
+    messageLookup = MessageLookupProxy.from(messageLookup, showMessageKey: showMessageKey);
   }
 
   /// Sets the pre-release config.

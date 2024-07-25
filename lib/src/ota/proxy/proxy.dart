@@ -10,11 +10,11 @@ class MessageLookupProxy implements MessageLookup {
   static final Logger _logger = Logger(printer: PrettyPrinter(methodCount: 0));
 
   final MessageLookup _messageLookup;
+  final bool _showMessageKey;
 
-  MessageLookupProxy.from(MessageLookup messageLookup)
-      : _messageLookup = (messageLookup is UninitializedLocaleData)
-            ? CompositeMessageLookup()
-            : messageLookup;
+  MessageLookupProxy.from(MessageLookup messageLookup, {bool showMessageKey = false})
+      : _showMessageKey = showMessageKey,
+        _messageLookup = (messageLookup is UninitializedLocaleData) ? CompositeMessageLookup() : messageLookup;
 
   @override
   void addLocale(String localeName, Function findLocale) {
@@ -22,23 +22,17 @@ class MessageLookupProxy implements MessageLookup {
   }
 
   @override
-  String? lookupMessage(String? messageText, String? locale, String? name,
-      List<Object>? args, String? meaning,
-      {MessageIfAbsent? ifAbsent}) {
-    // debug print for message lookup
-    print('lookupMessage: $messageText, $locale, $name, $args, $meaning');
+  String? lookupMessage(String? messageText, String? locale, String? name, List<Object>? args, String? meaning, {MessageIfAbsent? ifAbsent}) {
+    if (_showMessageKey) {
+      return name;
+    }
     try {
       var currentLocale = locale ?? Intl.getCurrentLocale();
       var labels = SdkData.getData(currentLocale);
       var origArgs = SdkData.getOrigArgs(name);
 
-      if (labels == null ||
-          !labels.containsKey(name) ||
-          origArgs == null ||
-          args == null) {
-        return _messageLookup.lookupMessage(
-            messageText, locale, name, args, meaning,
-            ifAbsent: ifAbsent);
+      if (labels == null || !labels.containsKey(name) || origArgs == null || args == null) {
+        return _messageLookup.lookupMessage(messageText, locale, name, args, meaning, ifAbsent: ifAbsent);
       }
 
       var label = labels[name];
@@ -46,30 +40,22 @@ class MessageLookupProxy implements MessageLookup {
 
       var isLabelArgsValid = _validateLabelArgs(origArgs, labelArgs);
       if (!isLabelArgsValid) {
-        _logger.w(
-            "String '${label.key}' received Over-the-air for locale '$currentLocale' has unsupported placeholders.");
-        return _messageLookup.lookupMessage(
-            messageText, locale, name, args, meaning,
-            ifAbsent: ifAbsent);
+        _logger.w("String '${label.key}' received Over-the-air for locale '$currentLocale' has unsupported placeholders.");
+        return _messageLookup.lookupMessage(messageText, locale, name, args, meaning, ifAbsent: ifAbsent);
       }
 
       var argsMap = _mapArgs(origArgs, args);
 
       var translation = label.getTranslation(argsMap);
       if (translation == null) {
-        _logger.w(
-            "String '${label.key}' received Over-the-air for locale '$currentLocale' has not-well formatted message.");
-        return _messageLookup.lookupMessage(
-            messageText, locale, name, args, meaning,
-            ifAbsent: ifAbsent);
+        _logger.w("String '${label.key}' received Over-the-air for locale '$currentLocale' has not-well formatted message.");
+        return _messageLookup.lookupMessage(messageText, locale, name, args, meaning, ifAbsent: ifAbsent);
       }
 
       return translation;
     } catch (e) {
       _logger.w('Failed to lookup message.', error: e);
-      return _messageLookup.lookupMessage(
-          messageText, locale, name, args, meaning,
-          ifAbsent: ifAbsent);
+      return _messageLookup.lookupMessage(messageText, locale, name, args, meaning, ifAbsent: ifAbsent);
     }
   }
 
